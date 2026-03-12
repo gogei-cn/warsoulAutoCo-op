@@ -7,7 +7,7 @@ on:
 
 jobs:
   auto-coop:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
@@ -22,9 +22,10 @@ jobs:
         run: npm install
 
       - name: Install Playwright browsers
-        run: sudo npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Run worker script
+        shell: pwsh
         env:
           WARSOUL_USERNAME: ${{ secrets.WARSOUL_USERNAME }}
           WARSOUL_PASSWORD: ${{ secrets.WARSOUL_PASSWORD }}
