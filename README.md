@@ -8,11 +8,11 @@
 
 1. Fork 本仓库。
 2. 配置 GitHub Secrets（**极其重要：请勿将密码直接写在代码中**）。
-   - 在仓库的 `Settings` -> `Secrets and variables` -> `Actions` 中添加：
+   - 在仓库的 `Settings` -> `Secrets and variables` -> `Actions` 中，点击 `New repository secret`，添加以下 Secrets：
    - `WARSOUL_USERNAME`: `用户名`
    - `WARSOUL_PASSWORD`: `密码`
    - `WARSOUL_MODE`: `普通` 或 `进阶`（如果不设置，默认为 `普通`）
 3. 启动 GitHub Actions
    - 点击 `Actions`
-   - 选择 `auto-coop` 工作流
+   - 选择 `WarSoul Auto Co-op` 工作流
    - 点击 `Run workflow`，并在弹出的窗口中点击 `Run workflow`。
