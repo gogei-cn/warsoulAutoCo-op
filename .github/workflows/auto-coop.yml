@@ -1,0 +1,41 @@
+name: War Soul Auto Co-op
+
+on:
+  schedule:
+    - cron: "0 */8 * * *" # 每 8 小时运行一次
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  auto-coop:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run worker script
+        env:
+          WARSOUL_USERNAME: ${{ secrets.WARSOUL_USERNAME }}
+          WARSOUL_PASSWORD: ${{ secrets.WARSOUL_PASSWORD }}
+          WARSOUL_MODE: ${{ secrets.WARSOUL_MODE }}
+        run: node index.js
+
+      - name: Upload artifacts (Screenshots)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: |
+            status.png
+            error.png
