@@ -4,7 +4,9 @@ const { chromium } = require("playwright");
   // 环境变量中获取用户名和密码
   const USERNAME = process.env.WARSOUL_USERNAME;
   const PASSWORD = process.env.WARSOUL_PASSWORD;
-  const MODE = process.env.WARSOUL_MODE || "普通"; // 可选：普通, 进阶
+  // 0 代表普通, 1 代表进阶
+  const MODE_VAL = process.env.WARSOUL_MODE || "0";
+  const MODE = MODE_VAL === "1" ? "进阶" : "普通";
 
   if (!USERNAME || !PASSWORD) {
     console.error("请设置环境变量 WARSOUL_USERNAME 和 WARSOUL_PASSWORD");
