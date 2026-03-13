@@ -2,7 +2,7 @@
 
 ## 介绍
 
-本脚本使用 Playwright 自动在 [aring.cc/awakening-of-war-soul-ol/](https://aring.cc/awakening-of-war-soul-ol/) 上进行共斗操作，并通过 GitHub Actions 每 8 小时执行一次。
+本脚本使用 Playwright 自动在 [战魂觉醒OL](https://aring.cc/awakening-of-war-soul-ol/) 上进行共斗操作，并通过 GitHub Actions 每 8 小时执行一次。
 
 ## 使用方法
 
