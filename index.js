@@ -115,7 +115,7 @@ const { chromium } = require("playwright");
         .filter({ hasText: /^取消$/ })
         .first();
       if (await cancelBtn.isVisible()) {
-        console.log(`点击“取消”按钮`);
+        console.log(`点击“取消”按钮...`);
         await cancelBtn.click();
         await page.waitForTimeout(2000);
         // 3. 点击二次确认框的“确定”按钮
@@ -135,7 +135,7 @@ const { chromium } = require("playwright");
         .filter({ hasText: /^自动$/ })
         .first();
       if (await autoBtn.isVisible()) {
-        console.log(`点击 ${MODE} 模式下的“自动”按钮...`);
+        console.log(`点击“自动”按钮...`);
         await autoBtn.click();
         await page.waitForTimeout(2000);
 
