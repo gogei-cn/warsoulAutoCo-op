@@ -16,6 +16,8 @@ const { chromium } = require("playwright");
   const MAX_RETRIES = 2; // 最大重试次数
   let success = false;
 
+  // 重试机制，捕获并处理可能的错误
+
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({
@@ -25,170 +27,131 @@ const { chromium } = require("playwright");
     const page = await context.newPage();
 
     try {
-      if (attempt > 0) {
-        console.log(`正在进行第 ${attempt} 次重试...`);
-      }
+      if (attempt > 0) console.log(`正在进行第 ${attempt} 次重试...`);
       console.log("正在打开页面...");
-      // 增加超时时间并使用 domcontentloaded
+      
       await page.goto("https://aring.cc/awakening-of-war-soul-ol/", {
         waitUntil: "domcontentloaded",
-        timeout: 60000,
+        timeout: 30000,
       });
 
-      // 额外等待一段时间，并等待网络空闲（但不强制要求达到 networkidle）
-      await page.waitForTimeout(5000);
-      // 尝试在网络不繁忙后再继续
-      await page.waitForLoadState("load", { timeout: 15000 }).catch(() => {});
-
-      // 检查是否在登录页面
+      // -- 登录 --
       const loginBtn = page.getByRole("button", { name: "登录", exact: true });
-      if (await loginBtn.isVisible()) {
+      
+      // 最多等待 5 秒，只要一出现就继续，避免不必要的等待
+      const isLoginVisible = await loginBtn.waitFor({ state: "visible", timeout: 8000 }).then(() => true).catch(() => false);
+      
+      if (isLoginVisible) {
         console.log("检测到登录界面，开始登录...");
-        await page
-          .locator("form")
-          .filter({ hasText: "登录" })
-          .getByPlaceholder("请输入用户名或邮箱")
-          .fill(USERNAME);
-        await page
-          .locator("form")
-          .filter({ hasText: "登录" })
-          .getByPlaceholder("请输入密码")
-          .fill(PASSWORD);
+        await page.locator("form").filter({ hasText: "登录" }).getByPlaceholder("请输入用户名或邮箱").fill(USERNAME);
+        await page.locator("form").filter({ hasText: "登录" }).getByPlaceholder("请输入密码").fill(PASSWORD);
         await loginBtn.click();
-        console.log("点击登录按钮，等待进入游戏...");
-        await page.waitForTimeout(3000);
+        console.log("点击登录按钮，等待登录完成...");
       }
 
-      // 检查是否有“进入游戏”按钮（有些时候登录后需要再点一次）
-      const enterGameBtn = page.getByRole("button", {
-        name: "进入游戏",
-        exact: true,
-      });
-      if (await enterGameBtn.isVisible()) {
-        console.log("点击进入游戏...");
-        await enterGameBtn.click();
-        await page.waitForTimeout(5000);
+      // -- 检查登录状态 & 进入游戏 --
+      const enterGameBtn = page.getByRole("button", { name: "进入游戏", exact: true });
+      
+      const loginResult = await Promise.race([
+        page.waitForSelector('.el-message--success .el-message__content', { state: "visible", timeout: 8000 }).then(() => "success"),
+        page.waitForSelector('.el-message--error .el-message__content', { state: "visible", timeout: 8000 })
+            .then(async (el) => {
+              const text = await el.textContent();
+              return `error: ${text}`;
+            }).catch(() => "timeout")
+      ]).catch(() => "timeout");
+
+      if (loginResult.startsWith("error:")) {
+        const errorMsg = loginResult.replace("error: ", "");
+        throw new Error(`登录失败: ${errorMsg}`);
       }
 
+      const isEnterGameVisible = await enterGameBtn.waitFor({ state: "visible", timeout: 8000 }).then(() => true).catch(() => false);
+      if (!isEnterGameVisible) {
+         throw new Error("登录失败或未能进入游戏: 未能找到进入游戏按钮");
+      }
+
+      console.log("点击进入游戏...");
+      await enterGameBtn.click();
+
+      // -- 挂共斗 --
       console.log("尝试寻找并执行共斗...");
+      const coopTab = page.locator("button").filter({ hasText: /^共斗$/ }).first();
+      // 等待共斗按钮出现
+      const isCoopVisible = await coopTab.waitFor({ state: "visible", timeout: 8000 }).then(() => true).catch(() => false);
 
-      // 1. 点击“共斗”频道按钮
-      const coopTab = page
-        .locator("button")
-        .filter({ hasText: /^共斗$/ })
-        .first();
-      if (await coopTab.isVisible()) {
-        console.log("切换到共斗频道...");
+      if (isCoopVisible) {
+        console.log("切换到共斗页面...");
         await coopTab.click();
-        await page.waitForTimeout(2000);
 
-        // 1.1 选择“普通”或“进阶”标签页
-        // 普通模式 data-v: 58c20fad, 进阶模式 data-v: 18d7a9fe
-        const modeAttr = MODE === "进阶" ? "18d7a9fe" : "58c20fad";
-        const modeTab = page
-          .locator(`.el-tabs__item[data-v-${modeAttr}]`)
-          .filter({ hasText: new RegExp(`^${MODE}$`) })
-          .first();
+        // 1. 切换模式
+        const tabSelector = MODE_VAL === "1" ? "#tab-advance" : "#tab-normal";
+        const tabBtn = page.locator(tabSelector);
+        await tabBtn.waitFor({ state: "visible", timeout: 5000 });
+        console.log(`正在点击切换到 ${MODE} 模式...`);
+        await tabBtn.click();
 
-        if (await modeTab.isVisible()) {
-          console.log(`切换到 ${MODE} 模式 (使用属性匹配)...`);
-          await modeTab.click();
-          await page.waitForTimeout(2000);
-        } else {
-          // 如果特定属性没找到，尝试通过通用文本匹配
-          const fallbackTab = page
-            .locator(".el-tabs__item")
-            .filter({ hasText: new RegExp(`^${MODE}$`) })
-            .first();
-          if (await fallbackTab.isVisible()) {
-            await fallbackTab.click();
-            await page.waitForTimeout(2000);
-          }
-        }
-      }
+        const paneSelector = MODE_VAL === "1" ? "#pane-advance" : "#pane-normal";
+        const pane = page.locator(paneSelector);
 
-      // 2. 点击“取消”、“自动”按钮
-      // 根据不同模式匹配对应的 data-v 属性
-      const autoAttr = MODE === "进阶" ? "18d7a9fe" : "58c20fad";
-      const cancelBtn = page
-        .locator(`button[data-v-${autoAttr}]`)
-        .filter({ hasText: /^取消$/ })
-        .first();
-      if (await cancelBtn.isVisible()) {
-        console.log(`点击“取消”按钮...`);
-        await cancelBtn.click();
-        await page.waitForTimeout(2000);
-        // 3. 点击二次确认框的“确定”按钮
-        const confirmBtn = page
-          .locator(".el-message-box__btns button")
-          .filter({ hasText: "确定" })
-          .first();
-        if (await confirmBtn.isVisible()) {
-          console.log("点击“确定”取消上次共斗...");
+        // 3. 点击“取消”按钮 (如果有挂机任务则取消)
+        const cancelBtn = pane.locator("button").filter({ hasText: /^取消$/ }).first();
+        const isCancelVisible = await cancelBtn.waitFor({ state: "visible", timeout: 2000 }).then(() => true).catch(() => false);
+        
+        if (isCancelVisible) {
+          console.log(`检测到正在挂机，点击“取消”按钮...`);
+          await cancelBtn.click();
+          const confirmBtn = page.locator(".el-message-box__btns button").filter({ hasText: "确定" }).first();
+          await confirmBtn.waitFor({ state: "visible", timeout: 5000 });
           await confirmBtn.click();
-          await page.waitForTimeout(2000);
         }
-      }
 
-      const autoBtn = page
-        .locator(`button[data-v-${autoAttr}]`)
-        .filter({ hasText: /^自动$/ })
-        .first();
-      if (await autoBtn.isVisible()) {
+        // 4. 点击“自动”按钮
+        const autoBtn = pane.locator("button").filter({ hasText: /^自动$/ }).first();
+        await autoBtn.waitFor({ state: "visible", timeout: 5000 });
         console.log(`点击“自动”按钮...`);
         await autoBtn.click();
-        await page.waitForTimeout(2000);
 
-        // 3. 在弹出的气泡框中点击“8 小时”
-        const eightHourBtn = page
-          .locator(`button[data-v-${autoAttr}]`)
-          .filter({ hasText: /^8 小时$/ })
-          .first();
+        // 5. 点击“8 小时”
+        const eightHourBtn = pane.locator("button").filter({ hasText: /^8 小时$/ }).first();
+        await eightHourBtn.waitFor({ state: "visible", timeout: 5000 });
+        console.log("点击“8 小时”...");
+        await eightHourBtn.click();
 
-        if (await eightHourBtn.isVisible()) {
-          console.log("点击“8 小时”...");
-          await eightHourBtn.click();
-          await page.waitForTimeout(2000);
-        } else {
-          console.log("未找到“8 小时”选项，尝试直接通过文字点击...");
-          await page
-            .locator("button")
-            .filter({ hasText: /^8 小时$/ })
-            .first()
-            .click();
-          await page.waitForTimeout(2000);
-        }
-        // 4. 点击二次确认框的“确定”按钮
-        const confirmBtn = page
-          .locator(".el-message-box__btns button")
-          .filter({ hasText: "确定" })
-          .first();
-        if (await confirmBtn.isVisible()) {
-          console.log("点击“确定”开始挂机...");
-          await confirmBtn.click();
-          await page.waitForTimeout(2000);
-        }
+        // 6. 确定
+        const finalConfirmBtn = page.locator(".el-message-box__btns button").filter({ hasText: "确定" }).first();
+        await finalConfirmBtn.waitFor({ state: "visible", timeout: 3000 });
+        console.log("点击“确定”开始挂机...");
+        await finalConfirmBtn.click();
       }
 
-      // 截图留存当前状态，方便调试
+      await page.waitForTimeout(1000); // 最后保留1秒等待以确保请求已发出
       await page.screenshot({ path: "status.png" });
 
       console.log("脚本执行成功！");
       success = true;
-      break; // 成功后退出重试循环
+      break;
     } catch (error) {
       console.error(
         `执行出错 (尝试 ${attempt + 1}/${MAX_RETRIES + 1}):`,
         error,
       );
       await page.screenshot({ path: `error_attempt_${attempt}.png` });
+      
+      if (error.message && error.message.includes("登录失败")) {
+        console.error("检测到登录失败，取消后续重试。");
+        await browser.close();
+        break;
+      }
     } finally {
-      await browser.close();
+      if (browser.isConnected()) {
+        await browser.close();
+      }
     }
 
     if (attempt < MAX_RETRIES) {
-      console.log(`等待 10 秒后进行下一次重试...`);
-      await new Promise((resolve) => setTimeout(resolve, 10000));
+      console.log(`等待 5 秒后进行下一次重试...`);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   }
 
