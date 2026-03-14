@@ -107,14 +107,33 @@ const { chromium } = require("playwright");
         }
       }
 
-      // 2. 点击“自动”按钮
+      // 2. 点击“取消”、“自动”按钮
       // 根据不同模式匹配对应的 data-v 属性
       const autoAttr = MODE === "进阶" ? "18d7a9fe" : "58c20fad";
+      const cancelBtn = page
+        .locator(`button[data-v-${autoAttr}]`)
+        .filter({ hasText: /^取消$/ })
+        .first();
+      if (await cancelBtn.isVisible()) {
+        console.log(`点击“取消”按钮`);
+        await cancelBtn.click();
+        await page.waitForTimeout(2000);
+        // 3. 点击二次确认框的“确定”按钮
+        const confirmBtn = page
+          .locator(".el-message-box__btns button")
+          .filter({ hasText: "确定" })
+          .first();
+        if (await confirmBtn.isVisible()) {
+          console.log("点击“确定”取消上次共斗...");
+          await confirmBtn.click();
+          await page.waitForTimeout(2000);
+        }
+      }
+
       const autoBtn = page
         .locator(`button[data-v-${autoAttr}]`)
         .filter({ hasText: /^自动$/ })
         .first();
-
       if (await autoBtn.isVisible()) {
         console.log(`点击 ${MODE} 模式下的“自动”按钮...`);
         await autoBtn.click();
@@ -139,7 +158,6 @@ const { chromium } = require("playwright");
             .click();
           await page.waitForTimeout(2000);
         }
-
         // 4. 点击二次确认框的“确定”按钮
         const confirmBtn = page
           .locator(".el-message-box__btns button")
