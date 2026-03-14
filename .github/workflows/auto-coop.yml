@@ -1,13 +1,13 @@
 name: War Soul Auto Co-op
 
 on:
-  schedule:
-    - cron: "0 */8 * * *" # 每 8 小时运行一次
+  schedule: # 每 6 小时执行一次
+    - cron: "0 */6 * * *"
   workflow_dispatch: # 允许手动触发
 
 jobs:
   auto-coop:
-    runs-on: windows-latest 
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
