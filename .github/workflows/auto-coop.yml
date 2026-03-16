@@ -38,6 +38,7 @@ jobs:
       - name: Run worker script
         shell: pwsh
         env:
+          WARSOUL_ACCOUNTS: ${{ secrets.WARSOUL_ACCOUNTS }}
           WARSOUL_USERNAME: ${{ secrets.WARSOUL_USERNAME }}
           WARSOUL_PASSWORD: ${{ secrets.WARSOUL_PASSWORD }}
           WARSOUL_MODE: ${{ secrets.WARSOUL_MODE }}
@@ -49,5 +50,5 @@ jobs:
         with:
           name: screenshots
           path: |
-            status.png
-            error.png
+            status*.png
+            error*.png
