@@ -19,9 +19,16 @@
 2. **配置 GitHub Secrets**（**极其重要：请勿将密码直接写在代码中**）：
    - 进入你 Fork 后的仓库 `Settings` -> `Secrets and variables` -> `Actions`。
    - 点击 `New repository secret`，依次添加：
-     - `WARSOUL_USERNAME`: 你的游戏用户名或邮箱。
-     - `WARSOUL_PASSWORD`: 你的游戏密码。
-     - `WARSOUL_MODE`: 挂机模式。输入 `0` 代表 `普通`，输入 `1` 代表 `进阶`（默认为 `0`）。
+     - `WARSOUL_ACCOUNTS`: (推荐) 使用 JSON 数组配置多账号。格式如下：
+       ```json
+       [
+         {"username": "user1", "password": "pwd1", "mode": "0"},
+         {"username": "user2", "password": "pwd2", "mode": "1"}
+       ]
+       ```
+     - `WARSOUL_USERNAME`: (旧版/单账号) 你的游戏用户名或邮箱。
+     - `WARSOUL_PASSWORD`: (旧版/单账号) 你的游戏密码。
+     - `WARSOUL_MODE`: (旧版/单账号) 挂机模式。输入 `0` 代表 `普通`，输入 `1` 代表 `进阶`（默认为 `0`）。
 3. **启用 GitHub Actions**：
    - 点击仓库上方的 `Actions` 选项卡。
    - 点击 `I understand my workflows, go ahead and enable them`。
