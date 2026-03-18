@@ -8,8 +8,7 @@
 
 - **定时执行**：利用 GitHub Action 定时自动运行，全天候持续挂机。
 - **多种模式**：支持根据配置的参数进行“普通”和“进阶”两种共斗模式无缝切换。
-- **智能等待与极速执行**：采用 DOM 监听和 `Promise.race` 并发机制，摆脱死板的固定等待时间，页面加载完即刻操作。
-- **精准错误检测**：能敏锐捕获页面抛出的登录失败（如密码错误）等红色提示，若判定登录失败则立即熔断退出，避免无意义的等待。
+- **精准错误检测**：能敏锐捕获页面抛出的登录失败（如密码错误）等红色提示。
 - **异常重试机制**：内置最大 2 次的自动重试机制（可配置）以应对偶尔的网络波动等不可抗力因素。
 - **运行报告与截图**：失败时会自动捕获并保存现场截图输出供查阅排错。
 
@@ -19,16 +18,23 @@
 2. **配置 GitHub Secrets**（**极其重要：请勿将密码直接写在代码中**）：
    - 进入你 Fork 后的仓库 `Settings` -> `Secrets and variables` -> `Actions`。
    - 点击 `New repository secret`，依次添加：
-     - `WARSOUL_ACCOUNTS`: (推荐) 使用 JSON 数组配置多账号。格式如下：
-       ```json
-       [
-         {"username": "user1", "password": "pwd1", "mode": "0"},
-         {"username": "user2", "password": "pwd2", "mode": "1"}
-       ]
+     - `WARSOUL_USERNAME`: 用户名或邮箱。支持多账号，一行一个。
+       ```text
+       user1
+       user2
        ```
-     - `WARSOUL_USERNAME`: (旧版/单账号) 你的游戏用户名或邮箱。
-     - `WARSOUL_PASSWORD`: (旧版/单账号) 你的游戏密码。
-     - `WARSOUL_MODE`: (旧版/单账号) 挂机模式。输入 `0` 代表 `普通`，输入 `1` 代表 `进阶`（默认为 `0`）。
+     - `WARSOUL_PASSWORD`: 密码。支持多账号，一行一个，必须与用户名逐行对应。
+       ```text
+       pwd1
+       pwd2
+       ```
+     - `WARSOUL_MODE`: 挂机模式。可选：
+       - 单行：所有账号共用该模式（`0` 普通 / `1` 进阶）。
+       - 多行：与账号逐行对应。
+       ```text
+       0
+       1
+       ```
 3. **启用 GitHub Actions**：
    - 点击仓库上方的 `Actions` 选项卡。
    - 点击 `I understand my workflows, go ahead and enable them`。
@@ -46,8 +52,8 @@
 如果脚本运行失败：
 
 1. 查看 Action 运行日志中的错误信息。
-2. 在 Action 运行记录底部的 `Artifacts` 栏下载 `status.png` 或 `error_attempt_X.png` 截图，查看屏幕画面。
-3. 检查 Secrets 配置是否正确，尤其是用户名和密码。
+2. 在 Action 运行记录底部的 `Artifacts` 栏下载 `screenshots`，解压并查看屏幕画面。
+3. 检查 Secrets 配置是否正确，尤其是多账号场景下用户名和密码是否逐行对应。
 
 ## 注意事项
 

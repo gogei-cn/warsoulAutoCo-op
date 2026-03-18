@@ -140,29 +140,37 @@ async function runForAccount(username, password, modeVal) {
 }
 
 (async () => {
-  const ACCOUNTS_STR = process.env.WARSOUL_ACCOUNTS;
   let accounts = [];
 
-  if (ACCOUNTS_STR) {
-    try {
-      accounts = JSON.parse(ACCOUNTS_STR);
-    } catch (e) {
-      console.error("WARSOUL_ACCOUNTS 格式错误，应为 JSON 数组。将尝试读取单个变量...");
-    }
-  }
+  const parseLines = (text) =>
+    (text || "")
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
 
-  if (accounts.length === 0) {
-    const USERNAME = process.env.WARSOUL_USERNAME;
-    const PASSWORD = process.env.WARSOUL_PASSWORD;
-    const MODE_VAL = process.env.WARSOUL_MODE || "0";
-    if (USERNAME && PASSWORD) {
-      accounts.push({ username: USERNAME, password: PASSWORD, mode: MODE_VAL });
-    }
-  }
+  const usernames = parseLines(process.env.WARSOUL_USERNAME);
+  const passwords = parseLines(process.env.WARSOUL_PASSWORD);
+  const modes = parseLines(process.env.WARSOUL_MODE);
 
-  if (accounts.length === 0) {
-    console.error("请设置环境变量 WARSOUL_ACCOUNTS (JSON) 或 WARSOUL_USERNAME/PASSWORD");
+  if (usernames.length === 0 || passwords.length === 0) {
+    console.error("请设置环境变量 WARSOUL_USERNAME 和 WARSOUL_PASSWORD（支持一行一个账号）");
     process.exit(1);
+  }
+
+  if (usernames.length !== passwords.length) {
+    console.error("WARSOUL_USERNAME 与 WARSOUL_PASSWORD 的行数不一致，请确保一行用户名对应一行密码");
+    process.exit(1);
+  }
+
+  if (modes.length > 1 && modes.length !== usernames.length) {
+    console.error("WARSOUL_MODE 如配置多行，行数必须与账号行数一致");
+    process.exit(1);
+  }
+
+  const defaultMode = modes[0] || "0";
+  for (let i = 0; i < usernames.length; i++) {
+    const mode = modes.length === usernames.length ? modes[i] : defaultMode;
+    accounts.push({ username: usernames[i], password: passwords[i], mode: mode || "0" });
   }
 
   console.log("检测到 " + accounts.length + " 个账号，开始串行处理...");
