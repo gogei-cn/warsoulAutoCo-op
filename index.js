@@ -16,9 +16,10 @@ async function runForAccount(username, password, modeVal) {
     const page = await context.newPage();
 
     try {
-      if (attempt > 0) console.log(`账号 ${username} 正在进行第 ${attempt} 次重试...`);
+      if (attempt > 0)
+        console.log(`账号 ${username} 正在进行第 ${attempt} 次重试...`);
       console.log("正在打开页面...");
-      
+
       await page.goto("https://aring.cc/awakening-of-war-soul-ol/", {
         waitUntil: "domcontentloaded",
         timeout: 30000,
@@ -26,27 +27,53 @@ async function runForAccount(username, password, modeVal) {
 
       // -- 登录 --
       const loginBtn = page.getByRole("button", { name: "登录", exact: true });
-      const isLoginVisible = await loginBtn.waitFor({ state: "visible", timeout: 8000 }).then(() => true).catch(() => false);
-      
+      const isLoginVisible = await loginBtn
+        .waitFor({ state: "visible", timeout: 8000 })
+        .then(() => true)
+        .catch(() => false);
+
       if (isLoginVisible) {
         console.log("检测到登录界面，开始登录...");
-        await page.locator("form").filter({ hasText: "登录" }).getByPlaceholder("请输入用户名或邮箱").fill(username);
-        await page.locator("form").filter({ hasText: "登录" }).getByPlaceholder("请输入密码").fill(password);
+        await page
+          .locator("form")
+          .filter({ hasText: "登录" })
+          .getByPlaceholder("请输入用户名或邮箱")
+          .fill(username);
+        await page
+          .locator("form")
+          .filter({ hasText: "登录" })
+          .getByPlaceholder("请输入密码")
+          .fill(password);
         await loginBtn.click();
         console.log("点击登录按钮，等待登录完成...");
       }
 
       // -- 检查登录状态 & 进入游戏 --
-      const enterGameBtn = page.getByRole("button", { name: "进入游戏", exact: true });
-      
+      const enterGameBtn = page.getByRole("button", {
+        name: "进入游戏",
+        exact: true,
+      });
+
       const loginResult = await Promise.race([
-        enterGameBtn.waitFor({ state: "visible", timeout: 8000 }).then(() => "success"),
-        page.waitForSelector(".el-message--success .el-message__content", { state: "visible", timeout: 8000 }).then(() => "success"),
-        page.waitForSelector(".el-message--error .el-message__content", { state: "visible", timeout: 8000 })
-            .then(async (el) => {
-              const text = await el.textContent();
-              return "error: " + text;
-            }).catch(() => "timeout")
+        enterGameBtn
+          .waitFor({ state: "visible", timeout: 8000 })
+          .then(() => "success"),
+        page
+          .waitForSelector(".el-message--success .el-message__content", {
+            state: "visible",
+            timeout: 8000,
+          })
+          .then(() => "success"),
+        page
+          .waitForSelector(".el-message--error .el-message__content", {
+            state: "visible",
+            timeout: 8000,
+          })
+          .then(async (el) => {
+            const text = await el.textContent();
+            return "error: " + text;
+          })
+          .catch(() => "timeout"),
       ]).catch(() => "timeout");
 
       if (loginResult.startsWith("error:")) {
@@ -54,9 +81,12 @@ async function runForAccount(username, password, modeVal) {
         throw new Error(`登录失败: ${errorMsg}`);
       }
 
-      const isEnterGameVisible = await enterGameBtn.waitFor({ state: "visible", timeout: 8000 }).then(() => true).catch(() => false);
+      const isEnterGameVisible = await enterGameBtn
+        .waitFor({ state: "visible", timeout: 8000 })
+        .then(() => true)
+        .catch(() => false);
       if (!isEnterGameVisible) {
-         throw new Error("登录失败或未能进入游戏: 未能找到进入游戏按钮");
+        throw new Error("登录失败或未能进入游戏: 未能找到进入游戏按钮");
       }
 
       console.log("点击进入游戏...");
@@ -64,15 +94,21 @@ async function runForAccount(username, password, modeVal) {
 
       // -- 挂共斗 --
       console.log("尝试寻找并执行共斗...");
-      const coopTab = page.locator("button").filter({ hasText: /^共斗$/ }).first();
-      const isCoopVisible = await coopTab.waitFor({ state: "visible", timeout: 8000 }).then(() => true).catch(() => false);
+      const coopTab = page
+        .locator("button")
+        .filter({ hasText: /^共斗$/ })
+        .first();
+      const isCoopVisible = await coopTab
+        .waitFor({ state: "visible", timeout: 8000 })
+        .then(() => true)
+        .catch(() => false);
 
       if (isCoopVisible) {
         console.log("切换到共斗页面...");
         await coopTab.click();
 
         const tabSelector = modeVal === "1" ? "#tab-advance" : "#tab-normal";
-        const tabBtn = page.locator(tabSelector);
+        const tabBtn = page.locator(tabSelector).first();
         await tabBtn.waitFor({ state: "visible", timeout: 5000 });
         console.log(`正在点击切换到 ${MODE} 模式...`);
         await tabBtn.click();
@@ -80,28 +116,46 @@ async function runForAccount(username, password, modeVal) {
         const paneSelector = modeVal === "1" ? "#pane-advance" : "#pane-normal";
         const pane = page.locator(paneSelector);
 
-        const cancelBtn = pane.locator("button").filter({ hasText: /^取消$/ }).first();
-        const isCancelVisible = await cancelBtn.waitFor({ state: "visible", timeout: 2000 }).then(() => true).catch(() => false);
-        
+        const cancelBtn = pane
+          .locator("button")
+          .filter({ hasText: /^取消$/ })
+          .first();
+        const isCancelVisible = await cancelBtn
+          .waitFor({ state: "visible", timeout: 2000 })
+          .then(() => true)
+          .catch(() => false);
+
         if (isCancelVisible) {
           console.log(`检测到正在挂机，点击“取消”按钮...`);
           await cancelBtn.click();
-          const confirmBtn = page.locator(".el-message-box__btns button").filter({ hasText: "确定" }).first();
+          const confirmBtn = page
+            .locator(".el-message-box__btns button")
+            .filter({ hasText: "确定" })
+            .first();
           await confirmBtn.waitFor({ state: "visible", timeout: 5000 });
           await confirmBtn.click();
         }
 
-        const autoBtn = pane.locator("button").filter({ hasText: /^自动$/ }).first();
+        const autoBtn = pane
+          .locator("button")
+          .filter({ hasText: /^自动$/ })
+          .first();
         await autoBtn.waitFor({ state: "visible", timeout: 5000 });
         console.log(`点击“自动”按钮...`);
         await autoBtn.click();
 
-        const eightHourBtn = pane.locator("button").filter({ hasText: /^8 小时$/ }).first();
+        const eightHourBtn = pane
+          .locator("button")
+          .filter({ hasText: /^8 小时$/ })
+          .first();
         await eightHourBtn.waitFor({ state: "visible", timeout: 5000 });
         console.log("点击“8 小时”...");
         await eightHourBtn.click();
 
-        const finalConfirmBtn = page.locator(".el-message-box__btns button").filter({ hasText: "确定" }).first();
+        const finalConfirmBtn = page
+          .locator(".el-message-box__btns button")
+          .filter({ hasText: "确定" })
+          .first();
         await finalConfirmBtn.waitFor({ state: "visible", timeout: 3000 });
         console.log("点击“确定”开始挂机...");
         await finalConfirmBtn.click();
@@ -115,11 +169,19 @@ async function runForAccount(username, password, modeVal) {
       break;
     } catch (error) {
       console.error(
-        "账号 " + username + " 执行出错 (尝试 " + (attempt + 1) + "/" + (MAX_RETRIES + 1) + "):",
+        "账号 " +
+          username +
+          " 执行出错 (尝试 " +
+          (attempt + 1) +
+          "/" +
+          (MAX_RETRIES + 1) +
+          "):",
         error,
       );
-      await page.screenshot({ path: "error_" + username + "_attempt_" + attempt + ".png" });
-      
+      await page.screenshot({
+        path: "error_" + username + "_attempt_" + attempt + ".png",
+      });
+
       if (error.message && error.message.includes("登录失败")) {
         console.error("检测到登录失败，取消该账号后续重试。");
         await browser.close();
@@ -153,12 +215,16 @@ async function runForAccount(username, password, modeVal) {
   const modes = parseLines(process.env.WARSOUL_MODE);
 
   if (usernames.length === 0 || passwords.length === 0) {
-    console.error("请设置环境变量 WARSOUL_USERNAME 和 WARSOUL_PASSWORD（支持一行一个账号）");
+    console.error(
+      "请设置环境变量 WARSOUL_USERNAME 和 WARSOUL_PASSWORD（支持一行一个账号）",
+    );
     process.exit(1);
   }
 
   if (usernames.length !== passwords.length) {
-    console.error("WARSOUL_USERNAME 与 WARSOUL_PASSWORD 的行数不一致，请确保一行用户名对应一行密码");
+    console.error(
+      "WARSOUL_USERNAME 与 WARSOUL_PASSWORD 的行数不一致，请确保一行用户名对应一行密码",
+    );
     process.exit(1);
   }
 
@@ -170,14 +236,22 @@ async function runForAccount(username, password, modeVal) {
   const defaultMode = modes[0] || "0";
   for (let i = 0; i < usernames.length; i++) {
     const mode = modes.length === usernames.length ? modes[i] : defaultMode;
-    accounts.push({ username: usernames[i], password: passwords[i], mode: mode || "0" });
+    accounts.push({
+      username: usernames[i],
+      password: passwords[i],
+      mode: mode || "0",
+    });
   }
 
   console.log("检测到 " + accounts.length + " 个账号，开始串行处理...");
 
   let allSuccess = true;
   for (const acc of accounts) {
-    const res = await runForAccount(acc.username, acc.password, acc.mode || "0");
+    const res = await runForAccount(
+      acc.username,
+      acc.password,
+      acc.mode || "0",
+    );
     if (!res) allSuccess = false;
   }
 
