@@ -14,6 +14,13 @@ async function runForAccount(username, password, modeVal) {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
     });
     const page = await context.newPage();
+    const captureScreenshot = async (path) => {
+      try {
+        await page.screenshot({ path, timeout: 10000 });
+      } catch (screenshotError) {
+        console.error("截图失败:", screenshotError.message);
+      }
+    };
 
     try {
       if (attempt > 0)
@@ -162,7 +169,7 @@ async function runForAccount(username, password, modeVal) {
       }
 
       await page.waitForTimeout(1000);
-      await page.screenshot({ path: "status_" + username + ".png" });
+      await captureScreenshot("status_" + username + ".png");
 
       console.log("账号 " + username + " 脚本执行成功！");
       success = true;
@@ -178,9 +185,7 @@ async function runForAccount(username, password, modeVal) {
           "):",
         error,
       );
-      await page.screenshot({
-        path: "error_" + username + "_attempt_" + attempt + ".png",
-      });
+      await captureScreenshot("error_" + username + "_attempt_" + attempt + ".png");
 
       if (error.message && error.message.includes("登录失败")) {
         console.error("检测到登录失败，取消该账号后续重试。");
