@@ -18,7 +18,7 @@ async function runForAccount(username, password, modeVal) {
       try {
         await page.screenshot({ path, timeout: 10000 });
       } catch (screenshotError) {
-        console.error(`截图失败 (${path}):`, screenshotError.message);
+        console.error("截图失败:", screenshotError.message);
       }
     };
 
