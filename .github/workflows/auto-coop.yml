@@ -7,8 +7,7 @@ on:
 
 jobs:
   auto-coop:
-    # 【修复1】将 ubuntu-latest 锁定为 ubuntu-22.04，彻底解决 Ubuntu 24/26 不支持的报错
-    runs-on: ubuntu-22.04 
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -24,8 +23,7 @@ jobs:
         id: cache-playwright
         uses: actions/cache@v4
         with:
-          # 【修复2】将 Windows 路径修改为 Linux 标准缓存路径
-          path: ~/.cache/ms-playwright
+          path: ~\AppData\Local\ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-playwright-
@@ -35,12 +33,10 @@ jobs:
 
       - name: Install Playwright Browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
-        run: |
-          # 【修复3】添加 --with-deps，自动安装 Chromium 运行所需的底层系统依赖
-          npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Run worker script
-        # 【优化】移除了 shell: pwsh，在 Linux 下直接使用默认的 bash 运行 Node.js 效率更高且不易出错
+        shell: pwsh
         env:
           WARSOUL_USERNAME: ${{ secrets.WARSOUL_USERNAME }}
           WARSOUL_PASSWORD: ${{ secrets.WARSOUL_PASSWORD }}
@@ -58,7 +54,7 @@ jobs:
 
   workflow-keepalive:
     if: github.event_name == 'schedule'
-    runs-on: ubuntu-22.04 # 【优化】保持环境一致性，同样锁定为 22.04
+    runs-on: ubuntu-latest
     permissions:
       actions: write
     steps:
